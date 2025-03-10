@@ -1,0 +1,70 @@
+CLASS zcl_highest_salary DEFINITION
+PUBLIC
+FINAL
+CREATE PUBLIC.
+PUBLIC SECTION.
+TYPES: BEGIN OF ty_result,
+department TYPE CHAR50,
+employee TYPE CHAR50,
+salary TYPE I,
+END OF ty_result.
+TYPES: tt_result TYPE TABLE OF ty_result.
+METHODS: highest_salary CHANGING t_result TYPE tt_result.
+PROTECTED SECTION.
+PRIVATE SECTION.
+ENDCLASS.
+CLASS zcl_highest_salary IMPLEMENTATION.
+METHOD highest_salary.
+************************************************************************
+* highest_salary
+*-----------------------------------------------------------------------
+* This method returns a table containing the employees with the
+* highest salary by department
+************************************************************************
+DATA	:	lt_employee LIKE zta_employee, “ Internal table for employee
+			  ls_result TYPE t_result. “ Work Area for output table  
+
+REFRESH	: t_result.
+
+“  1. Looping the ZTA_DEPARTMENT table to fetch the Department Name
+LOOP AT zta_department INTO DATA(ls_department).
+
+  “  2. Looping the ZTA_EMPLOYEE table to fetch the Employee Name, Salary
+  LOOP AT zta_employee INTO DATA(ls_employee)
+			                      WHERE department_id	=	ls_department-ID
+			                      GROUP BY (	department_id	=	ls_employee-department_id 
+							                          SIZE				  =	GROUP SIZE	)
+			                      ASSIGNING FIELD-SYMBOL(<lfs_department_id_group>).
+ 
+    “  3. Looping the group  	
+	  REFRESH	: 	lt_employee.
+	  LOOP AT GROUP <lfs_department_id_group>	
+					  ASSIGNING FIELD-SYMBOL(	<department_id>	).
+		lt_employee	=	VALUE #(	BASE	lt_employee	(	<department_id>	)	)
+	  ENDLOOP. “	GROUP table
+	
+    “  4. Sorting the internal table in descending order based on salary
+	  SORT lt_employee BY salary DESCENDING.
+	  READ TABLE lt_employee INTO DATA(ls_emp_result)	INDEX 1.
+	  IF sy-subrc = 0.
+	
+      “ 	5. Reading the highest salary record entry.
+			ls_result-department	=	ls_department-name.
+			ls_result-employee		=	ls_emp_result-name.
+			ls_result-salary			=	ls_emp_result-salary.
+			APPEND ls_result TO t_result. “ Populating the output table
+			CLEAR	:	ls_result.
+		  DATA(lv_tabix)	=	sy-tabix + 1.
+		  LOOP AT lt_employee INTO DATA(ls_emp) FROM lv_tabix.
+			  IF ls_emp-salary = ls_emp_result-salary. “ Multiple records
+				“  6. Reading the highest salary record entry.
+			  ls_result-department		=	ls_department-name.
+			  ls_result-employee		  =	ls_emp-name.
+			  ls_result-salary				=	ls_emp-salary.
+			  APPEND ls_result TO t_result. “ Populating the output table
+			  CLEAR	:	ls_result.
+			  ENDIF.
+		   ENDLOOP.  "  Internal table
+	   ENDIF.  "  Read table
+  ENDLOOP.  ”  Employee table  
+ENDLOOP.	”  Department table

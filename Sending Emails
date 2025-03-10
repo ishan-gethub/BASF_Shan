@@ -1,0 +1,115 @@
+CLASS zcl_send_mail DEFINITION
+PUBLIC
+FINAL
+CREATE PUBLIC.
+PUBLIC SECTION.
+METHODS:
+is_valid_address
+IMPORTING iv_address TYPE string
+RETURNING VALUE(ev_result) TYPE abap_bool,
+send_mail
+IMPORTING iv_to TYPE string
+iv_subject TYPE string
+iv_content TYPE string
+RETURNING VALUE(ev_result) TYPE abap_bool.
+PROTECTED SECTION.
+PRIVATE SECTION.
+ENDCLASS.
+
+CLASS zcl_send_mail IMPLEMENTATION.
+
+METHOD is_valid_address.
+*************************************************************************
+* is_valid_address
+*------------------------------------------------------------------------
+* This method validates an email address
+*************************************************************************
+IF  iv_address IS NOT INITIAL. “ Not an empty string.
+
+“ 1. Instantiating the object for the class regex
+	DATA(lo_regex) = NEW cl_abap_regex( pattern  =  '\w+(\.\w+)*@(\w+\.)+(\w{2,4})'
+                                 			ignore_case = abap_true ).
+
+“ 2. Creating the matcher
+	DATA(lo_abap_matcher) = lo_regex->create_matcher( text =  iv_address ).
+
+“ 3. Displaying the found match
+	IF lo_abap_matcher->match( ) IS INITIAL.
+     		ev_result = abap_false. “ 'Email address is invalid'.
+  	ELSE.
+     		ev_result = abap_true.  “ 'Email address is valid'.
+  	ENDIF.
+
+ELSE.
+
+	ev_result = abap_false. “ Email address is empty.
+
+ENDIF.
+ENDMETHOD.
+
+
+METHOD send_mail.
+*************************************************************************
+* send_mail
+*------------------------------------------------------------------------
+* This method sends a simple email and returns whether the email was sent
+*************************************************************************
+
+“ Sending email only if we have
+IF 	ev_result 		= abap_true 	AND 	“ Provided a valid address 						
+	  iv_subject 	IS NOT INITIAL 	AND		“ Provided a non-empty subject
+	  iv_content 	IS NOT INITIAL		.		” Provided a non-empty message
+iv_to = iv_address.
+TRY.
+		“ 1. Reading the message.
+		DATA(lt_body_text) = cl_document_bcs->string_to_soli(		ip_string	=	iv_content	).
+
+    		“ 2. Create the document type, subject and the message.
+		DATA(lo_doc) = cl_document_bcs->create_document(	i_type		=		‘RAW’ 
+																				              i_text		=		lt_body_text								
+																				              i_subject	=		CONV so_obj_dcs(	iv_subject	)
+																				            ).
+			
+		“ 2. Create the send request
+		DATA(lo_send_request) = cl_bcs=>create_persistent( ).
+		lo_send_request->set_message_subject(  ip_subject	=	iv_subject  ). 
+		lo_send_request->set_document(  lo_doc  ).
+
+		“ 3. User who log-in into SAP as sender
+		DATA(lo_sender) = cl_sapuser_bcs=>create(	sy-uname  ).
+		lo_send_request->set_sender( lo_sender  ).
+
+		“ 4. Adding the recipient
+		DATA(lo_recipient) = cl_cam_address_bcs->create_internal_address(	iv_to	).
+		lo_send_request->add_recipient(		i_recipient	=	lo_recipient		
+														          i_express	=	abap_true	
+														      ).
+
+    “ 5. Send email
+    lo_send_request->set_send_immediately(  abap_true	 ).
+    lo_send_request->send(  i_with_error_screen	=	abap_true  ).
+    COMMIT WORK.
+
+		“ 6. Returning the message if the email has been sent or not
+		IF sy-subrc	=	0.
+			ev_result = abap_true. “ Email is sent
+			WRITE:	/	‘EMAIL has been sent!’.
+		ELSE.
+			ev_result = abap_false. “ No email is sent
+			WRITE:	/	‘EMAIL has not been sent!’.
+		ENDIF.
+
+  CATCH cx_root INTO DATA(iv_text).
+    		WRITE: / iv_text->get_text(	).
+ENDTRY.
+
+
+ELSE.
+	ev_result = abap_false. “ No email is sent
+	WRITE:	/	‘EMAIL has not been sent!’.
+ENDIF.
+
+
+
+ENDMETHOD.
+ENDCLASS.

@@ -1,0 +1,35 @@
+CLASS zcl_balance_brackets DEFINITION
+PUBLIC
+FINAL
+CREATE PUBLIC.
+PUBLIC SECTION.
+METHODS:
+is_balanced IMPORTING iv_brackets TYPE string
+RETURNING VALUE(ev_result) TYPE abap_bool.
+PROTECTED SECTION.
+PRIVATE SECTION.
+ENDCLASS.
+CLASS zcl_balance_brackets IMPLEMENTATION.
+METHOD is_balanced.
+************************************************************************
+* is_balanced
+*-----------------------------------------------------------------------
+* This method validates a set of brackets
+************************************************************************
+
+“ 1. Instantiating the object for the class regex
+	DATA(lo_reg) = NEW cl_abap_regex	( pattern  =  '^\g<b>$(?<b>(?:[^\[\]{}()\n]|\g<p>|\g<s_b>|\g<c_b>)*){0}(?<p>\(\g<b>\)){0}(?<s_b>\[\g<b>\]){0}(?<c_b>\{\g<b>\}){0}’
+                                 									ignore_case = abap_true ).
+
+“ 2. Creating the matcher
+	DATA(lo_matcher) = lo_reg->create_matcher( text =   iv_brackets ).
+
+“ 3. Displaying the found match
+	IF lo_matcher->match( ) IS NOT INITIAL. " X
+     		ev_result = abap_true. “ 'Balanced String’.
+  	ELSE.
+     		ev_result = abap_false.  “ 'String is not balanced’.
+  	ENDIF.
+
+ENDMETHOD.
+ENDCLASS.

@@ -1,0 +1,25 @@
+// 8. The messages should be grouped if they have the same timestamp. 
+// This means that the timestamp only needs to be displayed if it is a different one from the previous message.
+
+sap.ui.define([
+	"sap/ui/core/mvc/Controller",
+	"sap/ui/model/json/JSONModel",
+	"sap/m/GroupHeaderListItem "
+], function (Controller, JSONModel, GroupHeaderListItem) {
+	"use strict";
+	return Controller.extend("sap.ui.sample.App", {
+		onInit : function () {
+			…
+		},	
+
+		getDate: function(oContext) {
+			return oContext.getProperty('date');
+		},
+		
+		getGroupHeader: function(oGroup) {
+			return new GroupHeaderListItem({
+				title : oGroup.key
+			}
+		);
+	},   
+});

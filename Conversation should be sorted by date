@@ -1,0 +1,24 @@
+// 6. The conversation should be sorted by date. 
+// The most recent messages should be displayed in the bottom of the screen.
+
+sap.ui.define([
+		“sap/ui/core/mvc/Controller”,
+		“sap/ui/model/Sorter”
+],
+	/**
+	 *	@param	{typeof		sap.ui.core.mvc.Controller}	Controller
+	 */
+	function	{Controller,	Sorter)		{
+			“use strict”;
+			return Controller.extend(“<your-api-endpoint>”,	{
+					sortReceivedMessagesSet: function	(	)	{
+							var	oSorter	=	new	Sorter(“Date”, false);
+							var aSorter	=	[	];
+							aSorter.push( oSorter );
+
+							var oList	=	this.byId("list-id");
+							var	oBinding	=	oList.getBinding(“items”);
+							oBinding.sort(aSorter);
+					}
+			}	);
+	}	);

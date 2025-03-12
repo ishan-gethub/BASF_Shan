@@ -1,0 +1,8 @@
+// 2. The list of conversations should display the name and photo of the user, as well as the text of the most recent message.
+
+var sUrl = "<your-api-endpoint>"; 
+var oChatsSet = new sap.ui.model.json.JSONModel();
+oChatsSet.loadData(sUrl, {"$select": "Name,Photo"}, false);
+var oReceivedMessagesSet = new sap.ui.model.json.JSONModel();
+oReceivedMessagesSet.loadData(sUrl, {"$select": "Text"}, true);
+oChatsSet.setData(oReceivedMessages.getData(), true);

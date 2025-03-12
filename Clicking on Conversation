@@ -1,0 +1,5 @@
+// 4. Clicking on a conversation should display all the messages that the user had with the selected contact.
+onDetailPress: function(oEvent) {
+    var oReceivedMessagesSet	= oEvent.getSource().getBindingContext("ID").getObject();
+    // from this object, you can do oObject.ID
+}
